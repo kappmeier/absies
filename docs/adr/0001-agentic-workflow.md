@@ -9,7 +9,7 @@ Work on this repository is done by agents on feature branches, and the superpowe
 
 ## Decision
 
-Plans live in `docs/superpowers/plans/` and ledgers in `.superpowers/`, committed on the feature branch only. Before a branch merges to `main`, the `finishing-a-development-branch` skill runs: lasting decisions graduate to `docs/adr/` or `ARCHITECTURE.md`, and all Superpowers artifacts are deleted. The workflow `.github/workflows/guard-no-plan-files.yml` fails any push or pull request to `main` that still contains these directories.
+Plans live in `docs/superpowers/plans/` and ledgers in `.superpowers/`, committed on the feature branch only. Before a branch merges to `main`, the separately callable `promote-plan-to-architecture` skill (`.agents/skills/promote-plan-to-architecture/`) runs first: lasting decisions graduate to `docs/adr/` or `ARCHITECTURE.md`, and all Superpowers artifacts are deleted. Whenever the superpowers `finishing-a-development-branch` skill (https://github.com/obra/superpowers/blob/main/skills/finishing-a-development-branch/SKILL.md) is called, `promote-plan-to-architecture` must be called prior to it. The workflow `.github/workflows/guard-no-plan-files.yml` fails any push or pull request to `main` that still contains these directories.
 
 ## Consequences
 

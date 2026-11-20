@@ -8,17 +8,15 @@ The app shows an exercise, captures the child's handwriting as pen strokes, reco
 
 ## Planned layout
 
+This sketch is not a decision yet. Confirm the module layout through brainstorming and record the outcome in `docs/adr/`.
+
 - `app/` holds the Android application module.
 - The exercise flow: exercise screen, pen input view, stroke capture, handwriting recognition, answer checking.
 - Subject modules provide exercises and check answers; math is the first subject module.
 
 ## Data flow
 
-1. The exercise screen presents a task.
-2. The child writes with the pen on the input view.
-3. The view captures the strokes.
-4. Recognition turns the strokes into a candidate answer.
-5. The checker compares the candidate answer with the expected answer and gives feedback.
+Not decided yet. Before implementing pen input and answer checking, run the superpowers brainstorming skill, then record the resulting flow here and in `docs/adr/`.
 
 ## Decisions
 

@@ -41,7 +41,7 @@ Pre-merge graduation (required before finishing a branch): review the completed 
 
 Plan files must not reach `main`. The workflow `.github/workflows/guard-no-plan-files.yml` fails pushes to `main` and pull requests to `main` that still contain `docs/superpowers/` or `.superpowers/`.
 
-When the `finishing-a-development-branch` skill (`.github/skills/finishing-a-development-branch/`) is used, apply the cleanup procedure it captures: graduate the plan into evergreen docs and delete all plans before merging to `main`.
+Graduation is captured in the separately callable skill `promote-plan-to-architecture` at `.agents/skills/promote-plan-to-architecture/SKILL.md`. Whenever the superpowers `finishing-a-development-branch` skill (https://github.com/obra/superpowers/blob/main/skills/finishing-a-development-branch/SKILL.md) is called, call `promote-plan-to-architecture` prior to it: the plan is graduated to an architecture doc (`docs/adr/` or `ARCHITECTURE.md`), or deleted, before the branch is finished.
 
 ## Where to look
 

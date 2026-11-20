@@ -2,7 +2,7 @@
 
 Learn and exercise app.
 
-absies is an Android app for learning, targeted at small school children. Children answer with a pen and write by hand. The first subject is math.
+absies is an Android app for learning, targeted at small school children. Children answer with a pen and write by hand.
 
 ## Working on this repository
 

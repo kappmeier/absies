@@ -2,11 +2,11 @@
 
 ## Language
 
-The app is written in Kotlin and follows the official Kotlin coding conventions. Keep functions small and name them after what they do.
+The implementation language is not decided yet, and no ADR covers it. Once a language is chosen, record the decision in `docs/adr/` and follow that language's official conventions. Keep functions small and name them after what they do.
 
 ## Formatting and lint
 
-Format with ktlint or the Android Studio formatter before committing. PRs should not contain formatting-only diff noise.
+Format with the toolchain's standard formatter before committing. PRs should not contain formatting-only diff noise.
 
 ## Tests
 
@@ -14,7 +14,11 @@ Every behavior change comes with a test. Checker and recognition logic get unit 
 
 ## Commits
 
-Use conventional commit messages: `<type>: <short summary>`. The types match the branch prefixes: `feature`, `fix`, `doc`, `chore`, `hotfix`, `test`, `release`.
+Use conventional commit messages: `<type>: <short summary>`. The types match the branch prefixes: `feature`, `fix`, `doc`, `chore`, `hotfix`, `test`, `release`. Commits written with agent assistance carry a co-author trailer so GitHub credits the agent: `Co-authored-by: mistral-vibe <220374863+mistral-vibe@users.noreply.github.com>`.
+
+## Clean code
+
+Follow clean code standards, except where they introduce unreasonable overhead.
 
 ## Comments
 

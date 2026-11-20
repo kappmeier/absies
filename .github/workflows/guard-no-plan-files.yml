@@ -26,6 +26,6 @@ jobs:
           if [ -n "$artifacts" ]; then
             echo "::error::Transient plan files must not reach main:"
             echo "$artifacts"
-            echo "::error::Graduate lasting decisions to docs/adr/ or ARCHITECTURE.md, delete docs/superpowers/ and .superpowers/, then retry."
+            echo "::error::Run the promote-plan-to-architecture skill (.agents/skills/promote-plan-to-architecture/) to graduate lasting decisions to docs/adr/ or ARCHITECTURE.md, delete docs/superpowers/ and .superpowers/, then retry."
             exit 1
           fi
