@@ -11,3 +11,4 @@
 ## Progress
 
 - 2026-11-21: branch created from origin/main, plan and ledger committed.
+- 2026-11-21: signing logic proven in a scratch repo with a throwaway GPG key (sandbox has no ssh-keygen; the runner's ubuntu-latest ships openssh-client). Rebase reuses commits that are already signed and on an unchanged base, so their hash and signature survive; the first unsigned commit and its descendants are rewritten and re-signed, and all commits in `main..branch` verified afterwards. Second run is idempotent.

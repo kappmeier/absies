@@ -25,7 +25,7 @@
 
 ## Review focus
 
-- The rebase must leave already signed commits untouched and handle an empty range without failing.
+- Commits upstream of the first unsigned commit keep their hash and signature; the first unsigned commit and its descendants are rewritten and re-signed, because their parent hashes change. Verified locally with a throwaway GPG key. The run must handle an empty range without failing.
 - The verification step must fail the run when any commit in `main..branch` lacks a signature.
 - The key file must be removed even when an earlier step fails.
 - YAML parses, and `run` blocks contain no `${{ }}` interpolation of user input.

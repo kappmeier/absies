@@ -1,0 +1,79 @@
+name: Sign branch commits
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch whose unsigned commits get signed before merge
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: ${{ inputs.branch }}
+    steps:
+      - name: Refuse to run on main
+        run: |
+          if [ "$BRANCH" = "main" ]; then
+            echo "::error::This workflow signs feature branches only, never main."
+            exit 1
+          fi
+
+      - name: Checkout the branch with full history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+
+      - name: Make origin/main available
+        run: git fetch origin +refs/heads/main:refs/remotes/origin/main
+
+      - name: Write the signing key from the secret
+        env:
+          SSH_SIGNING_KEY: ${{ secrets.SSH_SIGNING_KEY }}
+        run: |
+          if [ -z "$SSH_SIGNING_KEY" ]; then
+            echo "::error::Secret SSH_SIGNING_KEY is not set for this repository."
+            echo "::error::Set it from your own machine with: gh secret set SSH_SIGNING_KEY"
+            exit 1
+          fi
+          umask 077
+          printf '%s\n' "$SSH_SIGNING_KEY" > "$HOME/signing_key"
+          git config --local gpg.format ssh
+          git config --local user.signingkey "$HOME/signing_key"
+          git config --local commit.gpgsign true
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          ssh-keygen -y -f "$HOME/signing_key" > "$HOME/signing_key.pub"
+          printf '* %s\n' "$(cat "$HOME/signing_key.pub")" > "$HOME/allowed_signers"
+          git config --local gpg.ssh.allowedSignersFile "$HOME/allowed_signers"
+
+      - name: Sign unsigned commits
+        run: |
+          BASE=$(git merge-base origin/main HEAD)
+          echo "Signing unsigned commits in ${BASE}..HEAD on branch ${BRANCH}"
+          git rebase --exec 'if ! git cat-file commit HEAD | grep -q "^gpgsig"; then git commit --amend --no-edit -S; fi' "$BASE"
+
+      - name: Verify all commits in range are signed
+        run: |
+          BASE=$(git merge-base origin/main HEAD)
+          UNSIGNED=$(git log --format='%H' "$BASE..HEAD" | while read -r c; do
+            git cat-file commit "$c" | grep -q '^gpgsig' || echo "$c"
+          done)
+          if [ -n "$UNSIGNED" ]; then
+            echo "::error::Commits still unsigned: $UNSIGNED"
+            exit 1
+          fi
+          git log --format='%h %G? %s' "$BASE..HEAD"
+
+      - name: Push the signed branch
+        run: git push --force-with-lease origin "HEAD:${BRANCH}"
+
+      - name: Remove the signing key
+        if: always()
+        run: rm -f "$HOME/signing_key" "$HOME/signing_key.pub" "$HOME/allowed_signers"
