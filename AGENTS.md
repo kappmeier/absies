@@ -16,7 +16,7 @@ Before the first commit of a session, set the local git identity:
 
 ```
 git config user.name "Jan-Philipp Kappmeier"
-git config user.email "4357226+kappmeier@users.noreply.github.com"
+git config user.email "jp.kappmeier@gmail.com"
 ```
 
 ## Skills
