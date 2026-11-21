@@ -14,7 +14,7 @@ Every behavior change comes with a test. Checker and recognition logic get unit 
 
 ## Commits
 
-Use conventional commit messages: `<type>: <short summary>`. The types match the branch prefixes: `feature`, `fix`, `doc`, `chore`, `hotfix`, `test`, `release`. Commits written with agent assistance carry a co-author trailer so GitHub credits the agent: `Co-Authored-By: Mistral Vibe <vibe@mistral.ai>`.
+Use conventional commit messages: `<type>: <short summary>`. The types match the branch prefixes: `feature`, `fix`, `doc`, `chore`, `hotfix`, `test`, `release`. Commits are SSH-signed. Unsigned commits, for example from the sandbox, are signed before merge with the Sign branch commits action; see [Agents.md](../AGENTS.md). Commits written with agent assistance carry a co-author trailer so GitHub credits the agent: `Co-Authored-By: Mistral Vibe <vibe@mistral.ai>`.
 
 ## Clean code
 

@@ -19,6 +19,18 @@ git config user.name "Jan-Philipp Kappmeier"
 git config user.email "jp.kappmeier@gmail.com"
 ```
 
+## Commit signing
+
+Commits are signed with an SSH key. Register the public key on the GitHub account as a signing key (`gh ssh-key add --type signing` from your own session) and configure the local clone:
+
+```
+git config gpg.format ssh
+git config user.signingkey <key file or public key>
+git config commit.gpgsign true
+```
+
+Commits made in the ephemeral sandbox can be unsigned, because the sandbox holds no authorized private key. Before merging a branch that contains unsigned commits, run the "Sign branch commits" workflow manually (Actions, then "Sign branch commits", Run workflow, input `branch`). It signs every unsigned commit in `main..<branch>` with the `SSH_SIGNING_KEY` repository secret and pushes the branch with `--force-with-lease`. Commits after an unsigned one are re-signed as well, because their hashes change during the rebase; commits before it keep their hash and signature. Set the secret once from your own machine with `gh secret set SSH_SIGNING_KEY`, using the private key as the value.
+
 ## Skills
 
 The following skills are often used:
