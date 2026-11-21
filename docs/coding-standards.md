@@ -14,7 +14,7 @@ Every behavior change comes with a test. Checker and recognition logic get unit 
 
 ## Commits
 
-Use conventional commit messages: `<type>: <short summary>`. The types match the branch prefixes: `feature`, `fix`, `doc`, `chore`, `hotfix`, `test`, `release`. Commits written with agent assistance carry a co-author trailer so GitHub credits the agent: `Co-authored-by: mistral-vibe <220374863+mistral-vibe@users.noreply.github.com>`.
+Use conventional commit messages: `<type>: <short summary>`. The types match the branch prefixes: `feature`, `fix`, `doc`, `chore`, `hotfix`, `test`, `release`. Commits written with agent assistance carry a co-author trailer so GitHub credits the agent: `Co-Authored-By: Mistral Vibe <vibe@mistral.ai>`.
 
 ## Clean code
 
