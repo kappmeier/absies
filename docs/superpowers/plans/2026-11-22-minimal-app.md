@@ -10,6 +10,18 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-22-app-foundations-design.md` (decisions in `docs/adr/0003-native-android-toolchain.md` and `docs/adr/0004-module-layout-and-ink-model.md`)
 
+**Execution:** One implementer agent per task, each writing the failing test first (superpowers:test-driven-development), then the minimal code, then a commit. After every task commit, a fresh reviewer runs /ponytail-review on that task's diff with Mistral Large 4 (`mistral-large-4-0`). Must-fix findings (bugs, security, data loss) are fixed immediately in a follow-up commit on the same branch. Findings that a later task already covers are parked in the ledger. Minor findings are deferred to the final whole-branch review. Progress, rulings, and parked findings go to `.superpowers/ledger.md` on the feature branch. In a session without a subagent dispatch tool (this one), the tasks are executed inline by the session model, which also performs the reviewer role after each commit.
+
+## Agents and models
+
+| Task | Agent role | Model |
+| --- | --- | --- |
+| 1 scaffold, 9 README | build/docs agent | mistral-small-latest |
+| 2-5 core model, ink, generator, layout | core developer (also writes the tests first, per TDD) | mistral-large-4-0 |
+| 6-8 ViewModel and UI | UI developer (also writes the tests first, per TDD) | mistral-large-4-0 |
+| after every task commit | reviewer, /ponytail-review on the task diff, fresh context | mistral-large-4-0 (Mistral Large 4) |
+| after all tasks | final whole-branch review | mistral-large-4-0 |
+
 ## Global Constraints
 
 - Application id and package: `de.kappmeier.absies`; module namespaces `de.kappmeier.absies`, `de.kappmeier.absies.core.exercise`, `de.kappmeier.absies.core.ink`, `de.kappmeier.absies.feature.math`.
@@ -22,6 +34,7 @@
 - Every behavior change comes with a test: unit tests for logic, Compose UI tests for the exercise flow (docs/coding-standards.md).
 - Format Kotlin with the IDE default official style before committing; no formatting-only diff noise.
 - This plan file lives on the feature branch only and never reaches `main` (guard workflow `.github/workflows/guard-no-plan-files.yml`).
+- The agent sandbox has no JDK and no Android SDK, so `./gradlew` verification cannot run there. Run `./gradlew :app:assembleDebug`, `./gradlew testDebugUnitTest`, and `./gradlew :app:connectedDebugAndroidTest` on a dev machine (setup in README.md, Task 9) or in CI. Agents verify statically and via the per-task ponytail review.
 
 ## Review Focus
 
@@ -400,4 +413,30 @@ Expected: all unit tests PASS.
 ```bash
 git add app
 git commit -m "feat: add pen color switch, layer clear, and next exercise controls"
+```
+
+### Task 9: Build and dev environment docs in README.md
+
+**Files:**
+- Modify: `README.md`
+
+**Interfaces:**
+- Produces: a "Build" section and a "Development setup" section in README.md.
+
+- [ ] **Step 1: Write the README sections**
+
+Add to README.md:
+
+- **Build:** prerequisites are JDK 17 and Android Studio (current stable, which bundles the Android SDK and Gradle wrapper). Build the debug APK with `./gradlew :app:assembleDebug`, run all unit tests with `./gradlew testDebugUnitTest`, run the UI tests on an emulator or device with `./gradlew :app:connectedDebugAndroidTest`.
+- **Development setup:** install Android Studio and let it install the SDK; open the project root; JDK 17 is configured via the IDE/Gradle toolchain. To run on a real tablet or phone, enable developer options and USB debugging (or Wi-Fi debugging) on the device, connect it to the dev machine, and pick it in the Run configuration. To use the emulator, create a device with API level >= 24 in the Device Manager and run. Pen input must be tested on a real device with a stylus; the emulator only covers the flow.
+
+- [ ] **Step 2: Verify**
+
+Read README.md top to bottom; the commands match the ones in this plan. No build run needed for a docs change.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add README.md
+git commit -m "doc: add build and development setup instructions to README"
 ```
