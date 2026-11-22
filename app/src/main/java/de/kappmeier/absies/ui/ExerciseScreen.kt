@@ -3,14 +3,22 @@ package de.kappmeier.absies.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,28 +44,60 @@ import kotlin.math.min
 fun ExerciseScreen(viewModel: ExerciseViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val scale = min(
-            maxWidth.value / ExerciseViewModel.LOGICAL_WIDTH,
-            maxHeight.value / ExerciseViewModel.LOGICAL_HEIGHT,
-        )
-        CellGrid(
-            cells = state.cells,
-            layersByCell = state.layersByCell,
-            scale = scale,
-            onCellTapped = { cell -> viewModel.onCellTapped(cell) },
-        )
-        val selectedId = state.selectedCellId
-        if (selectedId != null) {
-            val cell = state.cells.first { it.id == selectedId }
-            EnlargedCellDialog(
-                layers = state.layersByCell[cell.id].orEmpty(),
-                penAuthor = state.penAuthor,
-                onStrokeFinished = { stroke -> viewModel.onStrokeFinished(stroke) },
-                onFinished = { viewModel.onFinished() },
+    Scaffold(
+        topBar = {
+            ExerciseTopBar(
+                showNext = state.exerciseIndex < state.exerciseCount - 1,
+                onNextExercise = { viewModel.onNextExercise() },
             )
+        },
+    ) { padding ->
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+            val scale = min(
+                maxWidth.value / ExerciseViewModel.LOGICAL_WIDTH,
+                maxHeight.value / ExerciseViewModel.LOGICAL_HEIGHT,
+            )
+            CellGrid(
+                cells = state.cells,
+                layersByCell = state.layersByCell,
+                scale = scale,
+                onCellTapped = { cell -> viewModel.onCellTapped(cell) },
+            )
+            val selectedId = state.selectedCellId
+            if (selectedId != null) {
+                val cell = state.cells.first { it.id == selectedId }
+                EnlargedCellDialog(
+                    layers = state.layersByCell[cell.id].orEmpty(),
+                    penAuthor = state.penAuthor,
+                    onPenAuthorSelected = { author -> viewModel.onPenAuthorSelected(author) },
+                    onClearLayer = { viewModel.onClearLayer() },
+                    onStrokeFinished = { stroke -> viewModel.onStrokeFinished(stroke) },
+                    onFinished = { viewModel.onFinished() },
+                )
+            }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExerciseTopBar(
+    showNext: Boolean,
+    onNextExercise: () -> Unit,
+) {
+    TopAppBar(
+        title = { Text(stringResource(R.string.app_name)) },
+        actions = {
+            if (showNext) {
+                TextButton(
+                    onClick = onNextExercise,
+                    modifier = Modifier.testTag("next-exercise"),
+                ) {
+                    Text(stringResource(R.string.next_exercise))
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -101,6 +141,8 @@ private fun CellGrid(
 private fun EnlargedCellDialog(
     layers: List<InkLayer>,
     penAuthor: PenAuthor,
+    onPenAuthorSelected: (PenAuthor) -> Unit,
+    onClearLayer: () -> Unit,
     onStrokeFinished: (Stroke) -> Unit,
     onFinished: () -> Unit,
 ) {
@@ -112,38 +154,63 @@ private fun EnlargedCellDialog(
             }
         },
         text = {
-            Box(Modifier.size(240.dp)) {
-                Canvas(Modifier.fillMaxSize()) {
-                    layers.forEach { layer ->
-                        layer.strokes.forEach { stroke ->
-                            if (stroke.points.size >= 2) {
-                                val path = Path().apply {
-                                    stroke.points.forEachIndexed { index, point ->
-                                        val x = point.x * size.width
-                                        val y = point.y * size.height
-                                        if (index == 0) moveTo(x, y) else lineTo(x, y)
+            Column {
+                Box(Modifier.size(240.dp)) {
+                    Canvas(Modifier.fillMaxSize()) {
+                        layers.forEach { layer ->
+                            layer.strokes.forEach { stroke ->
+                                if (stroke.points.size >= 2) {
+                                    val path = Path().apply {
+                                        stroke.points.forEachIndexed { index, point ->
+                                            val x = point.x * size.width
+                                            val y = point.y * size.height
+                                            if (index == 0) moveTo(x, y) else lineTo(x, y)
+                                        }
                                     }
+                                    drawPath(
+                                        path,
+                                        penColor(layer.author),
+                                        style = androidx.compose.ui.graphics.Stroke(
+                                            width = 8f,
+                                            cap = StrokeCap.Round,
+                                            join = StrokeJoin.Round,
+                                        ),
+                                    )
                                 }
-                                drawPath(
-                                    path,
-                                    penColor(layer.author),
-                                    style = androidx.compose.ui.graphics.Stroke(
-                                        width = 8f,
-                                        cap = StrokeCap.Round,
-                                        join = StrokeJoin.Round,
-                                    ),
-                                )
                             }
                         }
                     }
+                    InkCanvas(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .testTag("ink-canvas"),
+                        strokeColor = penColor(penAuthor),
+                        onStrokeFinished = onStrokeFinished,
+                    )
                 }
-                InkCanvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .testTag("ink-canvas"),
-                    strokeColor = penColor(penAuthor),
-                    onStrokeFinished = onStrokeFinished,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    TextButton(
+                        onClick = { onPenAuthorSelected(PenAuthor.CHILD) },
+                        modifier = Modifier.testTag("pen-child"),
+                    ) {
+                        Text(stringResource(R.string.pen_child))
+                    }
+                    TextButton(
+                        onClick = { onPenAuthorSelected(PenAuthor.CORRECTOR) },
+                        modifier = Modifier.testTag("pen-corrector"),
+                    ) {
+                        Text(stringResource(R.string.pen_corrector))
+                    }
+                    TextButton(
+                        onClick = onClearLayer,
+                        modifier = Modifier.testTag("clear-layer"),
+                    ) {
+                        Text(stringResource(R.string.clear_layer))
+                    }
+                }
             }
         },
     )
