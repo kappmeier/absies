@@ -6,17 +6,20 @@ absies is an Android app that lets small school children learn and exercise with
 
 The app shows an exercise, captures the child's handwriting as pen strokes, recognizes the written input, and checks the answer. Subjects are pluggable so more subjects can follow math.
 
-## Planned layout
+## Module layout
 
-This sketch is not a decision yet. Confirm the module layout through brainstorming and record the outcome in `docs/adr/`.
+Confirmed through brainstorming, recorded in [docs/adr/0003](docs/adr/0003-module-layout-and-ink-model.md):
 
-- `app/` holds the Android application module.
-- The exercise flow: exercise screen, pen input view, stroke capture, handwriting recognition, answer checking.
-- Subject modules provide exercises and check answers; math is the first subject module.
+- `:app/` holds the Android application module: navigation and dependency injection.
+- `:core:ink/` holds the stroke model, the pen canvas, and a `Recognizer` port for later handwriting recognition.
+- `:core:exercise/` holds the exercise flow and the cell grid.
+- `:feature:math/` provides exercise generation and the column arithmetic layout; math is the first subject module.
+
+The toolchain (Kotlin, Jetpack Compose, Gradle, Hilt) is recorded in [docs/adr/0002](docs/adr/0002-native-android-toolchain.md).
 
 ## Data flow
 
-Not decided yet. Before implementing pen input and answer checking, run the superpowers brainstorming skill, then record the resulting flow here and in `docs/adr/`.
+One exercise renders as a grid of cells (operand digits, helper row, result fields below the line). Tapping a cell opens it enlarged; pen strokes are captured as an `Ink` object and stored per cell as colored layers, one per author (blue child, red correcting person), so corrections never overwrite the child's strokes. The first step ships without recognition: a person evaluates the answer. Recognition runs on-device later, behind the `Recognizer` port in `:core:ink/`, reading only the result field cells.
 
 ## Decisions
 
