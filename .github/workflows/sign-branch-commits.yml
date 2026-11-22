@@ -19,13 +19,15 @@ jobs:
     steps:
       - name: Refuse to run on main
         run: |
-          if [ "$BRANCH" = "main" ]; then
-            echo "::error::This workflow signs feature branches only, never main."
-            exit 1
-          fi
+          case "$BRANCH" in
+            main|refs/heads/main)
+              echo "::error::This workflow signs feature branches only, never main."
+              exit 1
+              ;;
+          esac
 
       - name: Checkout the branch with full history
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.branch }}
           fetch-depth: 0
@@ -57,7 +59,7 @@ jobs:
         run: |
           BASE=$(git merge-base origin/main HEAD)
           echo "Signing unsigned commits in ${BASE}..HEAD on branch ${BRANCH}"
-          git rebase --exec 'if ! git cat-file commit HEAD | grep -q "^gpgsig"; then git commit --amend --no-edit -S; fi' "$BASE"
+          git rebase --rebase-merges --exec 'if ! git cat-file commit HEAD | grep -q "^gpgsig"; then git commit --amend --no-edit -S --allow-empty; fi' "$BASE"
 
       - name: Verify all commits in range are signed
         run: |
@@ -69,7 +71,7 @@ jobs:
             echo "::error::Commits still unsigned: $UNSIGNED"
             exit 1
           fi
-          git log --format='%h %G? %s' "$BASE..HEAD"
+          git log --format='%h %s' "$BASE..HEAD"
 
       - name: Push the signed branch
         run: git push --force-with-lease origin "HEAD:${BRANCH}"
