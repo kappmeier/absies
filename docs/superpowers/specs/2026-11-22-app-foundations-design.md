@@ -25,7 +25,7 @@ absies is an Android app where small school children solve exercises by writing 
 ## Constraints
 
 - Android tablet with stylus or finger input, minSdk 24.
-- UI language German, written for children around 6 to 8 years old.
+- Code in English. UI strings are externalized for multiple languages; the first shipped language is German, written for children around 6 to 8 years old (see docs/adr/0003).
 - Fully offline in the first step.
 - Unit tests for checker and recognition logic, UI tests for the exercise flow (see docs/coding-standards.md).
 
@@ -65,16 +65,18 @@ One exercise is shown at a time, rendered as a grid of cells:
 ## Data model
 
 - `Exercise`: operation (`+`, `-`, `×`) and operands. Renders to cells.
+- `Worksheet`: an ordered list of exercises.
+- `Collection`: a set of worksheets.
 - `Cell`: id, role (`operand digit`, `helper`, `result field`), bounds.
 - `InkLayer`: author color plus a list of strokes, stored per cell.
 - `Stroke`: list of points `(x, y, timestamp)`.
 
-Recognition later reads only the result field cells. Helper and operand annotations stay free ink.
+The initial version generates worksheets in the app; loading worksheets and collections from files comes later (see docs/adr/0004). Recognition later reads only the result field cells. Helper and operand annotations stay free ink.
 
 ## First feature set (minimal app)
 
 1. Gradle project scaffold: version catalog, `:app` with Compose and a theme.
-2. Exercise generator for addition, subtraction, and multiplication with configurable digit count and range.
+2. Exercise generator for addition, subtraction, and multiplication with configurable digit count and range, producing a worksheet of exercises.
 3. Grid rendering of one exercise: operands, helper row, line, result fields.
 4. Tap-to-enlarge cell overlay with pen input (`InkCanvas`: pointer events to strokes).
 5. Ink layers per cell with pen color switch and layer deletion.
@@ -91,7 +93,7 @@ Recognition later reads only the result field cells. Helper and operand annotati
 
 ## Left to the builder
 
-- Application id and package name (suggestion: `dev.kappmeier.absies`).
+- Application id and package name: prefix `de.kappmeier`, so `de.kappmeier.absies`.
 - Exact module names and package structure inside the modules above.
 - Overlay animation details and the exact "Fertig" interaction.
 - Default digit ranges per operation for the generator.
