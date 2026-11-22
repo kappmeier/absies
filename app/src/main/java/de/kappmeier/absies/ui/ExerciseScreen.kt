@@ -1,0 +1,180 @@
+package de.kappmeier.absies.ui
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import de.kappmeier.absies.R
+import de.kappmeier.absies.core.exercise.model.Cell
+import de.kappmeier.absies.core.exercise.model.CellId
+import de.kappmeier.absies.core.ink.InkLayer
+import de.kappmeier.absies.core.ink.PenAuthor
+import de.kappmeier.absies.core.ink.Stroke
+import kotlin.math.min
+
+@Composable
+fun ExerciseScreen(viewModel: ExerciseViewModel = hiltViewModel()) {
+    val state by viewModel.uiState.collectAsState()
+
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val scale = min(
+            maxWidth.value / ExerciseViewModel.LOGICAL_WIDTH,
+            maxHeight.value / ExerciseViewModel.LOGICAL_HEIGHT,
+        )
+        CellGrid(
+            cells = state.cells,
+            layersByCell = state.layersByCell,
+            scale = scale,
+            onCellTapped = { cell -> viewModel.onCellTapped(cell) },
+        )
+        val selectedId = state.selectedCellId
+        if (selectedId != null) {
+            val cell = state.cells.first { it.id == selectedId }
+            EnlargedCellDialog(
+                layers = state.layersByCell[cell.id].orEmpty(),
+                penAuthor = state.penAuthor,
+                onStrokeFinished = { stroke -> viewModel.onStrokeFinished(stroke) },
+                onFinished = { viewModel.onFinished() },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CellGrid(
+    cells: List<Cell>,
+    layersByCell: Map<CellId, List<InkLayer>>,
+    scale: Float,
+    onCellTapped: (Cell) -> Unit,
+) {
+    Box(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize()) {
+            cells.forEach { cell ->
+                layersByCell[cell.id].orEmpty().forEach { layer ->
+                    layer.strokes.forEach { stroke ->
+                        drawCellStroke(
+                            stroke = stroke,
+                            color = penColor(layer.author),
+                            offsetX = cell.left * scale,
+                            offsetY = cell.top * scale,
+                            cellWidth = (cell.right - cell.left) * scale,
+                            cellHeight = (cell.bottom - cell.top) * scale,
+                        )
+                    }
+                }
+            }
+        }
+        cells.forEach { cell ->
+            Box(
+                modifier = Modifier
+                    .offset((cell.left * scale).dp, (cell.top * scale).dp)
+                    .size(((cell.right - cell.left) * scale).dp, ((cell.bottom - cell.top) * scale).dp)
+                    .border(1.dp, Color.LightGray)
+                    .clickable { onCellTapped(cell) }
+                    .testTag("cell-${cell.id.value}"),
+            )
+        }
+    }
+}
+
+@Composable
+private fun EnlargedCellDialog(
+    layers: List<InkLayer>,
+    penAuthor: PenAuthor,
+    onStrokeFinished: (Stroke) -> Unit,
+    onFinished: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onFinished,
+        confirmButton = {
+            TextButton(onClick = onFinished, modifier = Modifier.testTag("done-button")) {
+                Text(stringResource(R.string.done))
+            }
+        },
+        text = {
+            Box(Modifier.size(240.dp)) {
+                Canvas(Modifier.fillMaxSize()) {
+                    layers.forEach { layer ->
+                        layer.strokes.forEach { stroke ->
+                            if (stroke.points.size >= 2) {
+                                val path = Path().apply {
+                                    stroke.points.forEachIndexed { index, point ->
+                                        val x = point.x * size.width
+                                        val y = point.y * size.height
+                                        if (index == 0) moveTo(x, y) else lineTo(x, y)
+                                    }
+                                }
+                                drawPath(
+                                    path,
+                                    penColor(layer.author),
+                                    style = androidx.compose.ui.graphics.Stroke(
+                                        width = 8f,
+                                        cap = StrokeCap.Round,
+                                        join = StrokeJoin.Round,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                }
+                InkCanvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("ink-canvas"),
+                    strokeColor = penColor(penAuthor),
+                    onStrokeFinished = onStrokeFinished,
+                )
+            }
+        },
+    )
+}
+
+private fun DrawScope.drawCellStroke(
+    stroke: Stroke,
+    color: Color,
+    offsetX: Float,
+    offsetY: Float,
+    cellWidth: Float,
+    cellHeight: Float,
+) {
+    if (stroke.points.size < 2) return
+    val path = Path().apply {
+        stroke.points.forEachIndexed { index, point ->
+            val x = offsetX + point.x * cellWidth
+            val y = offsetY + point.y * cellHeight
+            if (index == 0) moveTo(x, y) else lineTo(x, y)
+        }
+    }
+    drawPath(
+        path,
+        color,
+        style = androidx.compose.ui.graphics.Stroke(
+            width = 6f,
+            cap = StrokeCap.Round,
+            join = StrokeJoin.Round,
+        ),
+    )
+}
+
+private fun penColor(author: PenAuthor): Color =
+    if (author == PenAuthor.CHILD) Color.Blue else Color.Red
