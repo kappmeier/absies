@@ -22,7 +22,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -31,6 +33,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import de.kappmeier.absies.core.exercise.model.CellRole
 import androidx.hilt.navigation.compose.hiltViewModel
 import de.kappmeier.absies.R
 import de.kappmeier.absies.core.exercise.model.Cell
@@ -61,6 +65,7 @@ fun ExerciseScreen(viewModel: ExerciseViewModel = hiltViewModel()) {
                 cells = state.cells,
                 layersByCell = state.layersByCell,
                 scale = scale,
+                operator = state.operator,
                 onCellTapped = { cell -> viewModel.onCellTapped(cell) },
             )
             val selectedId = state.selectedCellId
@@ -105,6 +110,7 @@ private fun CellGrid(
     cells: List<Cell>,
     layersByCell: Map<CellId, List<InkLayer>>,
     scale: Float,
+    operator: String,
     onCellTapped: (Cell) -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
@@ -123,7 +129,20 @@ private fun CellGrid(
                     }
                 }
             }
+            val resultTop = cells.filter { it.role == CellRole.RESULT_FIELD }.minOf { it.top } * scale
+            drawLine(
+                color = Color.DarkGray,
+                start = Offset(0f, resultTop),
+                end = Offset(size.width, resultTop),
+                strokeWidth = 4f,
+            )
         }
+        val operandTop = cells.filter { it.role == CellRole.OPERAND_DIGIT }.minOf { it.top }
+        Text(
+            text = operator,
+            fontSize = ((cells.first { it.role == CellRole.OPERAND_DIGIT }.bottom - operandTop) * scale * 0.6f).sp,
+            modifier = Modifier.offset(8.dp, (operandTop * scale).dp),
+        )
         cells.forEach { cell ->
             Box(
                 modifier = Modifier
@@ -132,7 +151,15 @@ private fun CellGrid(
                     .border(1.dp, Color.LightGray)
                     .clickable { onCellTapped(cell) }
                     .testTag("cell-${cell.id.value}"),
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                if (cell.label.isNotEmpty()) {
+                    Text(
+                        text = cell.label,
+                        fontSize = (((cell.bottom - cell.top) * scale) * 0.6f).sp,
+                    )
+                }
+            }
         }
     }
 }

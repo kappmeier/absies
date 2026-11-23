@@ -20,7 +20,7 @@ class MathExerciseGenerator(
             Operation.ADDITION -> MathExercise(operation, listOf(first, random.nextInt(min, max + 1)))
             Operation.SUBTRACTION -> MathExercise(operation, listOf(first, random.nextInt(min, first + 1)))
             Operation.MULTIPLICATION -> {
-                val second = random.nextInt(1, maxResult / first + 1)
+                val second = random.nextInt(1, maxOf(1, maxResult / first) + 1)
                 MathExercise(operation, listOf(first, second))
             }
         }

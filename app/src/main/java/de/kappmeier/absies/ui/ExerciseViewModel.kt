@@ -12,6 +12,7 @@ import de.kappmeier.absies.core.ink.Stroke
 import de.kappmeier.absies.feature.math.ColumnLayout
 import de.kappmeier.absies.feature.math.MathExercise
 import de.kappmeier.absies.feature.math.MathExerciseGenerator
+import de.kappmeier.absies.feature.math.Operation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +26,7 @@ data class ExerciseUiState(
     val penAuthor: PenAuthor,
     val exerciseIndex: Int,
     val exerciseCount: Int,
+    val operator: String,
 )
 
 @HiltViewModel
@@ -38,12 +40,13 @@ class ExerciseViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(
         ExerciseUiState(
-            cells = layoutOf(exercises.first()),
+            cells = layoutOf(exercises.first(), 0),
             layersByCell = emptyMap(),
             selectedCellId = null,
             penAuthor = PenAuthor.CHILD,
             exerciseIndex = 0,
             exerciseCount = exercises.size,
+            operator = operatorSymbol(exercises.first()),
         ),
     )
     val uiState: StateFlow<ExerciseUiState> = _uiState.asStateFlow()
@@ -67,13 +70,15 @@ class ExerciseViewModel @Inject constructor(
     fun onNextExercise() {
         val nextIndex = _uiState.value.exerciseIndex + 1
         if (nextIndex >= exercises.size) return
-        val cells = layoutOf(exercises[nextIndex])
+        val nextExercise = exercises[nextIndex]
+        val cells = layoutOf(nextExercise, nextIndex)
         _uiState.update { state ->
             state.copy(
                 cells = cells,
                 layersByCell = cells.associate { it.id to inkStore.layers(it.id) },
                 selectedCellId = null,
                 exerciseIndex = nextIndex,
+                operator = operatorSymbol(nextExercise),
             )
         }
     }
@@ -90,8 +95,16 @@ class ExerciseViewModel @Inject constructor(
         }
     }
 
-    private fun layoutOf(exercise: MathExercise): List<Cell> =
-        ColumnLayout.layout(exercise, LOGICAL_WIDTH, LOGICAL_HEIGHT)
+    private fun layoutOf(exercise: MathExercise, exerciseIndex: Int): List<Cell> =
+        ColumnLayout.layout(exercise, LOGICAL_WIDTH, LOGICAL_HEIGHT).map { cell ->
+            cell.copy(id = CellId("ex$exerciseIndex-${cell.id.value}"))
+        }
+
+    private fun operatorSymbol(exercise: MathExercise): String = when (exercise.operation) {
+        Operation.ADDITION -> "+"
+        Operation.SUBTRACTION -> "-"
+        Operation.MULTIPLICATION -> "×"
+    }
 
     companion object {
         const val LOGICAL_WIDTH = 1080f

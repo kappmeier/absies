@@ -17,7 +17,7 @@ object ColumnLayout {
         exercise.operands.forEachIndexed { rowIndex, operand ->
             val digits = operand.toString()
             val startCol = resultFieldCount - digits.length
-            digits.forEachIndexed { digitIndex, _ ->
+            digits.forEachIndexed { digitIndex, digit ->
                 val col = startCol + digitIndex
                 cells.add(
                     Cell(
@@ -27,6 +27,7 @@ object ColumnLayout {
                         top = rowIndex * rowHeight,
                         right = (col + 1) * fieldWidth,
                         bottom = (rowIndex + 1) * rowHeight,
+                        label = digit.toString(),
                     ),
                 )
             }

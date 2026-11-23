@@ -129,6 +129,16 @@ class ExerciseViewModelTest {
     }
 
     @Test
+    fun `cell ids are unique per exercise so ink does not bleed between exercises`() {
+        val firstIds = viewModel.uiState.value.cells.map { it.id }.toSet()
+
+        viewModel.onNextExercise()
+
+        val secondIds = viewModel.uiState.value.cells.map { it.id }.toSet()
+        assertTrue(firstIds.intersect(secondIds).isEmpty())
+    }
+
+    @Test
     fun `next exercise never goes past the last exercise`() {
         repeat(ExerciseViewModel.WORKSHEET_SIZE + 5) { viewModel.onNextExercise() }
 

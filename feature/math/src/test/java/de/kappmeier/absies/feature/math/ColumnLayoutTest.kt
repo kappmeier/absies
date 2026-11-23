@@ -46,6 +46,14 @@ class ColumnLayoutTest {
     }
 
     @Test
+    fun `operand digit cells carry their digit as label`() {
+        val cells = ColumnLayout.layout(MathExercise(Operation.ADDITION, listOf(347, 237)), 1000f, 1600f)
+
+        val labels = cells.filter { it.role == CellRole.OPERAND_DIGIT }.map { it.label }
+        assertEquals(listOf("3", "4", "7", "2", "3", "7"), labels)
+    }
+
+    @Test
     fun `layout is deterministic for the same input`() {
         val exercise = MathExercise(Operation.ADDITION, listOf(347, 237))
 

@@ -92,7 +92,7 @@ data class Worksheet(val exercises: List<Exercise>)
 data class Collection(val worksheets: List<Worksheet>)
 enum class CellRole { OPERAND_DIGIT, HELPER, RESULT_FIELD }
 data class CellId(val value: String)
-data class Cell(val id: CellId, val role: CellRole, val left: Float, val top: Float, val right: Float, val bottom: Float)
+data class Cell(val id: CellId, val role: CellRole, val left: Float, val top: Float, val right: Float, val bottom: Float, val label: String = "")
 ```
 
 - [ ] **Step 1: Write the failing test**
@@ -287,6 +287,7 @@ data class ExerciseUiState(
     val penAuthor: PenAuthor,
     val exerciseIndex: Int,
     val exerciseCount: Int,
+    val operator: String,
 )
 
 @HiltViewModel
@@ -304,7 +305,7 @@ class ExerciseViewModel @Inject constructor(
 }
 ```
 
-`AppModule` binds `InkStore` to `InMemoryInkStore` as a singleton and provides `MathExerciseGenerator`. The ViewModel generates a worksheet of 10 exercises, lays out the current exercise with `ColumnLayout.layout(exercise, LOGICAL_WIDTH, LOGICAL_HEIGHT)` (logical size 1080x1600, scaled by the UI). `onCellTapped` selects the cell; `onStrokeFinished` adds the stroke to the selected cell under the current `penAuthor`; `onFinished` clears the selection but keeps layers; `onNextExercise` advances the index and reloads cells, never exceeding the last exercise; `onClearLayer` clears the current author's layer on the selected cell.
+`AppModule` binds `InkStore` to `InMemoryInkStore` as a singleton and provides `MathExerciseGenerator`. The ViewModel generates a worksheet of 10 exercises, lays out the current exercise with `ColumnLayout.layout(exercise, LOGICAL_WIDTH, LOGICAL_HEIGHT)` (logical size 1080x1600, scaled by the UI), and prefixes every cell id with the exercise index (`ex<index>-...`) so cell ids stay unique across exercises and ink never bleeds from one exercise into the next. The state also carries the operator symbol (`+`, `-`, `×`) so the UI can render the task. `onCellTapped` selects the cell; `onStrokeFinished` adds the stroke to the selected cell under the current `penAuthor`; `onFinished` clears the selection but keeps layers; `onNextExercise` advances the index and reloads cells, never exceeding the last exercise; `onClearLayer` clears the current author's layer on the selected cell.
 
 - [ ] **Step 1: Write the failing test**
 
