@@ -7,7 +7,8 @@ pen and write by hand.
 
 ## Build
 
-Prerequisites: JDK 17 and Android Studio (current stable), which bundles the Android SDK.
+Prerequisites: JDK 17 and [Android Studio](https://developer.android.com/studio) (current stable),
+which bundles the Android SDK.
 
 - Debug APK: `./gradlew :app:assembleDebug`
 - Unit tests: `./gradlew testDebugUnitTest`
