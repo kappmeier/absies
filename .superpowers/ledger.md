@@ -37,3 +37,25 @@ Branch: `feature/minimal-app` (base `doc/app-foundations`, spec/ADRs in PR #5, i
 
 - Minor: none recorded beyond the sandbox verification gap above.
 - Final review still to run on the whole branch diff once the dev machine build is green.
+
+## Final whole-branch review (PR #6, ponytail-review over merge-base main..HEAD)
+
+Must fix (both fixed immediately in 99b4b44):
+
+1. Cell ids repeated across exercises (`result-0` etc.), so `InMemoryInkStore` keyed by `CellId` bled strokes from one exercise into the next on `onNextExercise`. Fix: ViewModel prefixes ids with the exercise index (`ex<index>-...`); test `cell ids are unique per exercise` pins it.
+2. The exercise itself was never rendered: no operand digits, no operator, no result line, so the child could not see the task. Fix: `Cell.label` carries each operand digit, state carries `operator`, the screen draws labels, operator, and the line; test pins digit labels.
+
+Should fix (fixed in 99b4b44):
+
+3. Manifest had no `allowBackup=false`; set it, matching the no-child-data-leaves-device anti-goal.
+4. Generator edge: `maxResult / first` could be 0 with non-default config, making `nextInt(1, 1)` throw; clamped with `maxOf(1, ...)`.
+
+Nice to have / deferred:
+
+- Dependency versions in `gradle/libs.versions.toml` (activity 1.12.0, core-ktx 1.17.0, lifecycle 2.10.0, junit 5.13.4) are unverified in the sandbox; first dev-machine build resolves them.
+
+Not checked:
+
+- All Gradle builds and test runs (no JDK/Android SDK in the sandbox). Run on the dev machine: `./gradlew :app:assembleDebug`, `./gradlew testDebugUnitTest`, `./gradlew :app:connectedDebugAndroidTest`.
+
+Scoped re-review of fix range 99b4b44: clean, no new findings. Verdict: ship after the dev-machine build is green.
