@@ -73,6 +73,7 @@ fun ExerciseScreen(viewModel: ExerciseViewModel = hiltViewModel()) {
             if (selectedId != null) {
                 val cell = state.cells.first { it.id == selectedId }
                 EnlargedCellDialog(
+                    label = cell.label,
                     layers = state.layersByCell[cell.id].orEmpty(),
                     penAuthor = state.penAuthor,
                     onPenAuthorSelected = { author -> viewModel.onPenAuthorSelected(author) },
@@ -173,6 +174,7 @@ private fun CellGrid(
 
 @Composable
 private fun EnlargedCellDialog(
+    label: String,
     layers: List<InkLayer>,
     penAuthor: PenAuthor,
     onPenAuthorSelected: (PenAuthor) -> Unit,
@@ -190,6 +192,14 @@ private fun EnlargedCellDialog(
         text = {
             Column {
                 Box(Modifier.size(240.dp)) {
+                    if (label.isNotEmpty()) {
+                        Text(
+                            text = label,
+                            fontSize = 160.sp,
+                            color = Color.LightGray,
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    }
                     Canvas(Modifier.fillMaxSize()) {
                         layers.forEach { layer ->
                             layer.strokes.forEach { stroke ->

@@ -65,3 +65,9 @@ Scoped re-review of fix range 99b4b44: clean, no new findings. Verdict: ship aft
 - Ruling: the grid Canvas in `CellGrid` drew strokes and the result line with the dp based scale in pixel coordinates. Fixed by computing a pixel based scale from the canvas size inside the draw scope. This explains both reported bugs: line through the second row and ink small in the top left corner of a cell.
 - Docs aligned with the actual code: plan tech stack and constraints now pin Gradle 9.6, AGP 9.5.2, Kotlin 2.4.21, Compose BOM 2026.01.01, compileSdk/targetSdk 37, legacy-kapt; ADR 0003 records the pinned versions; plan Task 7 documents the dp-vs-px rendering rule.
 - Not checked: on-device rendering (no emulator in the sandbox); verify visually on the tablet.
+
+## Original digit as background in the enlarged cell
+
+- Feature: tapping a cell with a label (operand digit) shows the digit as a light gray background in the enlarged dialog, behind the ink layers, so the child can write over or next to it. UI test asserts the digit appears in grid and dialog.
+- Docs: plan Task 7 and ARCHITECTURE.md data flow updated.
+- Not checked: on-device rendering (no emulator in the sandbox); verify visually.

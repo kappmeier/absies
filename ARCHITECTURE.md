@@ -28,9 +28,11 @@ The toolchain (Kotlin, Jetpack Compose, Gradle, Hilt) is recorded in
 Exercises are layered: a worksheet is an ordered list of exercises, a collection a set of
 worksheets. The first version generates worksheets in the app; file-based worksheets and
 collections come later (see docs/adr/0004). One exercise renders as a grid of cells (operand
-digits, helper row, result fields below the line). Tapping a cell opens it enlarged; pen strokes
-are captured as an `Ink` object and stored per cell as colored layers, one per author (blue child,
-red correcting person), so corrections never overwrite the child's strokes. The first step ships
+digits, helper row, result fields below the line). Tapping a cell opens it enlarged; a cell that
+carries a label (an operand digit) shows that digit as a light gray background in the dialog, so
+the child can write over or next to it. Pen strokes are captured as an `Ink` object and stored per
+cell as colored layers, one per author (blue child, red correcting person), so corrections never
+overwrite the child's strokes. The first step ships
 without recognition: a person evaluates the answer. Recognition runs on-device later, behind the
 `Recognizer` port in `:core:ink/`, reading only the result field cells.
 

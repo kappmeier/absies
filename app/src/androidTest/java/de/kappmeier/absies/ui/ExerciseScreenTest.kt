@@ -1,9 +1,11 @@
 package de.kappmeier.absies.ui
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assertCountAtLeast
 import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -45,6 +47,19 @@ class ExerciseScreenTest {
         composeRule.setContent { ExerciseScreen(viewModel = viewModel) }
 
         composeRule.onNodeWithTag(resultCellTag(viewModel)).assertIsDisplayed()
+    }
+
+    @Test
+    fun tappingAnOperandCellShowsTheOriginalDigitAsBackgroundInTheDialog() {
+        val viewModel = viewModel()
+        composeRule.setContent { ExerciseScreen(viewModel = viewModel) }
+        val operandCell =
+            viewModel.uiState.value.cells.first { it.role == CellRole.OPERAND_DIGIT && it.label.isNotEmpty() }
+
+        composeRule.onNodeWithTag("cell-${operandCell.id.value}").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onAllNodesWithText(operandCell.label).assertCountAtLeast(2)
     }
 
     @Test
