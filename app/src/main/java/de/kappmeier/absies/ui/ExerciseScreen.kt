@@ -116,21 +116,27 @@ private fun CellGrid(
 ) {
     Box(Modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) {
+            // The Canvas draws in pixels, so strokes and the line need a pixel based
+            // scale. The cell Boxes below use dp offsets with the dp based scale.
+            val scalePx = min(
+                size.width / ExerciseViewModel.LOGICAL_WIDTH,
+                size.height / ExerciseViewModel.LOGICAL_HEIGHT,
+            )
             cells.forEach { cell ->
                 layersByCell[cell.id].orEmpty().forEach { layer ->
                     layer.strokes.forEach { stroke ->
                         drawCellStroke(
                             stroke = stroke,
                             color = penColor(layer.author),
-                            offsetX = cell.left * scale,
-                            offsetY = cell.top * scale,
-                            cellWidth = (cell.right - cell.left) * scale,
-                            cellHeight = (cell.bottom - cell.top) * scale,
+                            offsetX = cell.left * scalePx,
+                            offsetY = cell.top * scalePx,
+                            cellWidth = (cell.right - cell.left) * scalePx,
+                            cellHeight = (cell.bottom - cell.top) * scalePx,
                         )
                     }
                 }
             }
-            val resultTop = cells.filter { it.role == CellRole.RESULT_FIELD }.minOf { it.top } * scale
+            val resultTop = cells.filter { it.role == CellRole.RESULT_FIELD }.minOf { it.top } * scalePx
             drawLine(
                 color = Color.DarkGray,
                 start = Offset(0f, resultTop),

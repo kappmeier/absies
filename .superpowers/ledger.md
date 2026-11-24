@@ -59,3 +59,9 @@ Not checked:
 - All Gradle builds and test runs (no JDK/Android SDK in the sandbox). Run on the dev machine: `./gradlew :app:assembleDebug`, `./gradlew testDebugUnitTest`, `./gradlew :app:connectedDebugAndroidTest`.
 
 Scoped re-review of fix range 99b4b44: clean, no new findings. Verdict: ship after the dev-machine build is green.
+
+## UI fix + docs alignment (after user's version bump 0965a3d)
+
+- Ruling: the grid Canvas in `CellGrid` drew strokes and the result line with the dp based scale in pixel coordinates. Fixed by computing a pixel based scale from the canvas size inside the draw scope. This explains both reported bugs: line through the second row and ink small in the top left corner of a cell.
+- Docs aligned with the actual code: plan tech stack and constraints now pin Gradle 9.6, AGP 9.5.2, Kotlin 2.4.21, Compose BOM 2026.01.01, compileSdk/targetSdk 37, legacy-kapt; ADR 0003 records the pinned versions; plan Task 7 documents the dp-vs-px rendering rule.
+- Not checked: on-device rendering (no emulator in the sandbox); verify visually on the tablet.

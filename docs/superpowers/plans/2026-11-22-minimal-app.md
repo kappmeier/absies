@@ -6,7 +6,7 @@
 
 **Architecture:** Multi-module Gradle build per ADR 0004. `:app` holds Compose UI, Hilt, and the exercise ViewModel. `:core:exercise` holds the exercise/worksheet/collection and cell model. `:core:ink` holds the stroke model, the ink store, and the recognizer port. `:feature:math` holds the exercise generator and the column layout. Unidirectional flow: the ViewModel holds state, the UI renders it, pen events become strokes in the ink store.
 
-**Tech Stack:** Kotlin, Jetpack Compose (BOM), Gradle Kotlin DSL with version catalog, Hilt, minSdk 24, JDK 17, JUnit 5 for unit tests, Compose UI test for the flow. Current stable AGP, Kotlin, and Gradle versions pinned in `gradle/libs.versions.toml`.
+**Tech Stack:** Kotlin 2.4.21, Jetpack Compose (BOM 2026.01.01), Gradle 9.6 wrapper with Kotlin DSL and version catalog, AGP 9.5.2, Hilt 2.60.1 with the `com.android.legacy-kapt` plugin, compileSdk/targetSdk 37, minSdk 24, JDK 17, JUnit 5 for unit tests, Compose UI test for the flow. All versions pinned in `gradle/libs.versions.toml`.
 
 **Spec:** `docs/superpowers/specs/2026-11-22-app-foundations-design.md` (decisions in `docs/adr/0003-native-android-toolchain.md` and `docs/adr/0004-module-layout-and-ink-model.md`)
 
@@ -25,7 +25,7 @@
 ## Global Constraints
 
 - Application id and package: `de.kappmeier.absies`; module namespaces `de.kappmeier.absies`, `de.kappmeier.absies.core.exercise`, `de.kappmeier.absies.core.ink`, `de.kappmeier.absies.feature.math`.
-- minSdk 24, targetSdk and compileSdk current stable, JDK 17.
+- minSdk 24, compileSdk and targetSdk 37, JDK 17.
 - Modules: `:app`, `:core:exercise`, `:core:ink`, `:feature:math`. Dependencies: `core:ink` and `feature:math` depend on `core:exercise`; `:app` depends on all three.
 - Code and comments in English. UI strings externalized: `app/src/main/res/values/strings.xml` (English fallback) and `app/src/main/res/values-de/strings.xml` (German, the first shipped language).
 - No network, no backend, no persistence in this plan; all state in memory.
@@ -57,7 +57,7 @@
 
 - [ ] **Step 1: Write the build files**
 
-`settings.gradle.kts` includes the four modules and configures plugin management. `gradle/libs.versions.toml` pins current stable AGP, Kotlin, Compose BOM, Hilt, and test libraries. Root `build.gradle.kts` applies plugins with `apply false`. `app/build.gradle.kts` uses `com.android.application`, Compose, and Hilt; the three library modules use `com.android.library`. `gradle.properties` sets `android.useAndroidX=true` and `kotlin.code.style=official`. Generate the wrapper with `gradle wrapper --gradle-version <current stable>`.
+`settings.gradle.kts` includes the four modules and configures plugin management. `gradle/libs.versions.toml` pins AGP 9.5.2, Kotlin 2.4.21, Compose BOM 2026.01.01, Hilt 2.60.1, and the test libraries. Root `build.gradle.kts` applies plugins with `apply false`. `app/build.gradle.kts` uses `com.android.application`, the Compose compiler plugin, Hilt, and `com.android.legacy-kapt` for the Hilt compiler; the three library modules use `com.android.library`. `gradle.properties` sets `android.useAndroidX=true` and `kotlin.code.style=official`. The wrapper is committed with Gradle 9.6.
 
 - [ ] **Step 2: Write the placeholder app**
 
@@ -353,7 +353,7 @@ fun InkCanvas(
 )
 ```
 
-`ExerciseScreen` renders the cells of the current exercise as a grid scaled from the logical size to the actual size, drawing each cell's ink layers (child blue, corrector red). Tapping a cell calls `onCellTapped`; while a cell is selected, a dialog shows that cell enlarged with an `InkCanvas` and a "Fertig" button that calls `onFinished`. `InkCanvas` captures pointer drags into a `Stroke` using `clipToBounds` for every point, draws the finished stroke, and calls `onStrokeFinished`. Strings: `done`, `next_exercise` in `values/strings.xml` (English) and `values-de/strings.xml` (German: "Fertig", "Nächste Aufgabe"). Cells get a `testTag` of their `CellId` value.
+`ExerciseScreen` renders the cells of the current exercise as a grid scaled from the logical size (1080x1600) to the actual size, drawing each cell's ink layers (child blue, corrector red). The cell Boxes are placed with dp offsets and a dp based scale, while the Canvas that draws strokes, operand labels' line and the result line works in pixels and computes its own pixel based scale from the canvas size; mixing the two scales shifts ink into the top left corner and moves the result line up into the operand rows. Tapping a cell calls `onCellTapped`; while a cell is selected, a dialog shows that cell enlarged with an `InkCanvas` and a "Fertig" button that calls `onFinished`. `InkCanvas` captures pointer drags into a `Stroke` using `clipToBounds` for every point, draws the finished stroke, and calls `onStrokeFinished`. Strings: `done`, `next_exercise` in `values/strings.xml` (English) and `values-de/strings.xml` (German: "Fertig", "Nächste Aufgabe"). Cells get a `testTag` of their `CellId` value.
 
 - [ ] **Step 1: Write the failing UI test**
 
