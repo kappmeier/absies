@@ -2,6 +2,7 @@ package de.kappmeier.absies.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,19 +13,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.input.pointer.awaitPointerEvent
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import de.kappmeier.absies.core.ink.Point
-import de.kappmeier.absies.core.ink.Stroke
+import de.kappmeier.absies.core.ink.Stroke as InkStroke
 import de.kappmeier.absies.core.ink.clipToBounds
 
 @Composable
 fun InkCanvas(
     modifier: Modifier = Modifier,
     strokeColor: Color,
-    onStrokeFinished: (Stroke) -> Unit,
+    onStrokeFinished: (InkStroke) -> Unit,
 ) {
-    var currentStroke by remember { mutableStateOf<Stroke?>(null) }
+    var currentStroke by remember { mutableStateOf<InkStroke?>(null) }
 
     Canvas(
         modifier = modifier.pointerInput(Unit) {
@@ -44,22 +45,37 @@ fun InkCanvas(
                     }
                 }
                 addPoint(down.position.x, down.position.y, down.uptimeMillis)
+
+                // Use detectDragGestures pattern instead of awaitPointerEvent
+                var currentPosition = down.position
+                var currentTime = down.uptimeMillis
+
                 while (true) {
+                    // Wait for next event
                     val event = awaitPointerEvent()
-                    event.changes.forEach { change ->
-                        if (change.pressed) {
-                            addPoint(change.position.x, change.position.y, change.uptimeMillis)
+                    val changes = event.changes
+
+                    if (changes.any { it.pressed }) {
+                        // Continue tracking
+                        changes.forEach { change ->
+                            if (change.pressed) {
+                                currentPosition = change.position
+                                currentTime = change.uptimeMillis
+                                addPoint(currentPosition.x, currentPosition.y, currentTime)
+                            }
+                            change.consume()
                         }
-                        change.consume()
+                    } else {
+                        // All pointers are up - gesture complete
+                        if (points.size >= 2) {
+                            val stroke = InkStroke(points.toList())
+                            currentStroke = stroke
+                            onStrokeFinished(stroke)
+                        }
+                        currentStroke = null
+                        break
                     }
-                    if (event.changes.none { it.pressed }) break
                 }
-                if (points.size >= 2) {
-                    val stroke = Stroke(points.toList())
-                    currentStroke = stroke
-                    onStrokeFinished(stroke)
-                }
-                currentStroke = null
             }
         },
     ) {
@@ -77,7 +93,7 @@ fun InkCanvas(
             drawPath(
                 path,
                 strokeColor,
-                style = androidx.compose.ui.graphics.Stroke(
+                style = Stroke(
                     width = 8f,
                     cap = StrokeCap.Round,
                     join = StrokeJoin.Round,

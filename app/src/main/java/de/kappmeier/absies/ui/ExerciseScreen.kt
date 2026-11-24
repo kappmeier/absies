@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -41,7 +42,7 @@ import de.kappmeier.absies.core.exercise.model.Cell
 import de.kappmeier.absies.core.exercise.model.CellId
 import de.kappmeier.absies.core.ink.InkLayer
 import de.kappmeier.absies.core.ink.PenAuthor
-import de.kappmeier.absies.core.ink.Stroke
+import de.kappmeier.absies.core.ink.Stroke as InkStroke
 import kotlin.math.min
 
 @Composable
@@ -170,7 +171,7 @@ private fun EnlargedCellDialog(
     penAuthor: PenAuthor,
     onPenAuthorSelected: (PenAuthor) -> Unit,
     onClearLayer: () -> Unit,
-    onStrokeFinished: (Stroke) -> Unit,
+    onStrokeFinished: (InkStroke) -> Unit,
     onFinished: () -> Unit,
 ) {
     AlertDialog(
@@ -197,7 +198,7 @@ private fun EnlargedCellDialog(
                                     drawPath(
                                         path,
                                         penColor(layer.author),
-                                        style = androidx.compose.ui.graphics.Stroke(
+                                        style = Stroke(
                                             width = 8f,
                                             cap = StrokeCap.Round,
                                             join = StrokeJoin.Round,
@@ -244,7 +245,7 @@ private fun EnlargedCellDialog(
 }
 
 private fun DrawScope.drawCellStroke(
-    stroke: Stroke,
+    stroke: InkStroke,
     color: Color,
     offsetX: Float,
     offsetY: Float,
@@ -262,7 +263,7 @@ private fun DrawScope.drawCellStroke(
     drawPath(
         path,
         color,
-        style = androidx.compose.ui.graphics.Stroke(
+        style = Stroke(
             width = 6f,
             cap = StrokeCap.Round,
             join = StrokeJoin.Round,

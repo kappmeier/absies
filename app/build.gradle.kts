@@ -1,19 +1,18 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.legacy.kapt)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt)
 }
 
 android {
     namespace = "de.kappmeier.absies"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "de.kappmeier.absies"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -46,11 +45,18 @@ dependencies {
     implementation(project(":feature:math"))
 
     testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.concurrent:concurrent-futures:1.2.0")
+    }
 }
 
 tasks.withType<Test> {
