@@ -2,18 +2,30 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a minimal absies app where a child solves generated column arithmetic exercises (addition, subtraction, multiplication, any digit count) by writing digits with a pen into cells that enlarge on tap, and a second person can correct in a different pen color on its own layer. No handwriting recognition yet.
+**Goal:** Ship a minimal absies app where a child solves generated column arithmetic exercises (addition and subtraction in the first drop, any digit count) by writing digits with a pen into cells that enlarge on tap, and a second person can correct in a different pen color on its own layer. No handwriting recognition yet.
 
 **Architecture:** Multi-module Gradle build per ADR 0004. `:app` holds Compose UI, Hilt, and the exercise ViewModel. `:core:exercise` holds the exercise/worksheet/collection and cell model. `:core:ink` holds the stroke model, the ink store, and the recognizer port. `:feature:math` holds the exercise generator and the column layout. Unidirectional flow: the ViewModel holds state, the UI renders it, pen events become strokes in the ink store.
 
-**Tech Stack:** Kotlin, Jetpack Compose (BOM), Gradle Kotlin DSL with version catalog, Hilt, minSdk 24, JDK 17, JUnit 5 for unit tests, Compose UI test for the flow. Current stable AGP, Kotlin, and Gradle versions pinned in `gradle/libs.versions.toml`.
+**Tech Stack:** Kotlin 2.4.21, Jetpack Compose (BOM 2026.01.01), Gradle 9.6 wrapper with Kotlin DSL and version catalog, AGP 9.5.2, Hilt 2.60.1 with the `com.android.legacy-kapt` plugin, compileSdk/targetSdk 37, minSdk 24, JDK 17, JUnit 5 for unit tests, Compose UI test for the flow. All versions pinned in `gradle/libs.versions.toml`.
 
 **Spec:** `docs/superpowers/specs/2026-11-22-app-foundations-design.md` (decisions in `docs/adr/0003-native-android-toolchain.md` and `docs/adr/0004-module-layout-and-ink-model.md`)
+
+**Execution:** One implementer agent per task, each writing the failing test first (superpowers:test-driven-development), then the minimal code, then a commit. After every task commit, a fresh reviewer runs /ponytail-review on that task's diff with Mistral Large 4 (`mistral-large-4-0`). Must-fix findings (bugs, security, data loss) are fixed immediately in a follow-up commit on the same branch. Findings that a later task already covers are parked in the ledger. Minor findings are deferred to the final whole-branch review. Progress, rulings, and parked findings go to `.superpowers/ledger.md` on the feature branch. In a session without a subagent dispatch tool (this one), the tasks are executed inline by the session model, which also performs the reviewer role after each commit.
+
+## Agents and models
+
+| Task | Agent role | Model |
+| --- | --- | --- |
+| 1 scaffold, 9 README | build/docs agent | mistral-small-latest |
+| 2-5 core model, ink, generator, layout | core developer (also writes the tests first, per TDD) | mistral-large-4-0 |
+| 6-8 ViewModel and UI | UI developer (also writes the tests first, per TDD) | mistral-large-4-0 |
+| after every task commit | reviewer, /ponytail-review on the task diff, fresh context | mistral-large-4-0 (Mistral Large 4) |
+| after all tasks | final whole-branch review | mistral-large-4-0 |
 
 ## Global Constraints
 
 - Application id and package: `de.kappmeier.absies`; module namespaces `de.kappmeier.absies`, `de.kappmeier.absies.core.exercise`, `de.kappmeier.absies.core.ink`, `de.kappmeier.absies.feature.math`.
-- minSdk 24, targetSdk and compileSdk current stable, JDK 17.
+- minSdk 24, compileSdk and targetSdk 37, JDK 17.
 - Modules: `:app`, `:core:exercise`, `:core:ink`, `:feature:math`. Dependencies: `core:ink` and `feature:math` depend on `core:exercise`; `:app` depends on all three.
 - Code and comments in English. UI strings externalized: `app/src/main/res/values/strings.xml` (English fallback) and `app/src/main/res/values-de/strings.xml` (German, the first shipped language).
 - No network, no backend, no persistence in this plan; all state in memory.
@@ -22,6 +34,7 @@
 - Every behavior change comes with a test: unit tests for logic, Compose UI tests for the exercise flow (docs/coding-standards.md).
 - Format Kotlin with the IDE default official style before committing; no formatting-only diff noise.
 - This plan file lives on the feature branch only and never reaches `main` (guard workflow `.github/workflows/guard-no-plan-files.yml`).
+- The agent sandbox has no JDK and no Android SDK, so `./gradlew` verification cannot run there. Run `./gradlew :app:assembleDebug`, `./gradlew testDebugUnitTest`, and `./gradlew :app:connectedDebugAndroidTest` on a dev machine (setup in README.md, Task 9) or in CI. Agents verify statically and via the per-task ponytail review.
 
 ## Review Focus
 
@@ -44,7 +57,7 @@
 
 - [ ] **Step 1: Write the build files**
 
-`settings.gradle.kts` includes the four modules and configures plugin management. `gradle/libs.versions.toml` pins current stable AGP, Kotlin, Compose BOM, Hilt, and test libraries. Root `build.gradle.kts` applies plugins with `apply false`. `app/build.gradle.kts` uses `com.android.application`, Compose, and Hilt; the three library modules use `com.android.library`. `gradle.properties` sets `android.useAndroidX=true` and `kotlin.code.style=official`. Generate the wrapper with `gradle wrapper --gradle-version <current stable>`.
+`settings.gradle.kts` includes the four modules and configures plugin management. `gradle/libs.versions.toml` pins AGP 9.5.2, Kotlin 2.4.21, Compose BOM 2026.01.01, Hilt 2.60.1, and the test libraries. Root `build.gradle.kts` applies plugins with `apply false`. `app/build.gradle.kts` uses `com.android.application`, the Compose compiler plugin, Hilt, and `com.android.legacy-kapt` for the Hilt compiler; the three library modules use `com.android.library`. `gradle.properties` sets `android.useAndroidX=true` and `kotlin.code.style=official`. The wrapper is committed with Gradle 9.6.
 
 - [ ] **Step 2: Write the placeholder app**
 
@@ -79,7 +92,7 @@ data class Worksheet(val exercises: List<Exercise>)
 data class Collection(val worksheets: List<Worksheet>)
 enum class CellRole { OPERAND_DIGIT, HELPER, RESULT_FIELD }
 data class CellId(val value: String)
-data class Cell(val id: CellId, val role: CellRole, val left: Float, val top: Float, val right: Float, val bottom: Float)
+data class Cell(val id: CellId, val role: CellRole, val left: Float, val top: Float, val right: Float, val bottom: Float, val label: String = "")
 ```
 
 - [ ] **Step 1: Write the failing test**
@@ -182,6 +195,7 @@ data class MathExercise(val operation: Operation, val operands: List<Int>) : Exe
 class MathExerciseGenerator(
     private val digitRange: IntRange = 2..3,
     private val maxResult: Int = 9999,
+    private val operations: List<Operation> = listOf(Operation.ADDITION, Operation.SUBTRACTION),
     private val random: Random = Random.Default,
 ) {
     fun nextExercise(): MathExercise
@@ -189,7 +203,7 @@ class MathExerciseGenerator(
 }
 ```
 
-`MathExercise.result` computes sum for ADDITION, difference for SUBTRACTION, product for MULTIPLICATION. The generator picks a random operation and two operands with digit count in `digitRange`; for SUBTRACTION it ensures the first operand is >= the second; for MULTIPLICATION it ensures the product stays <= `maxResult`.
+`MathExercise.result` computes sum for ADDITION, difference for SUBTRACTION, product for MULTIPLICATION. The generator picks a random operation from its `operations` parameter, which defaults to ADDITION and SUBTRACTION only in the first drop (MULTIPLICATION stays supported for later), and two operands with digit count in `digitRange`; for SUBTRACTION it ensures the first operand is >= the second; for MULTIPLICATION it ensures the product stays <= `maxResult`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -274,6 +288,7 @@ data class ExerciseUiState(
     val penAuthor: PenAuthor,
     val exerciseIndex: Int,
     val exerciseCount: Int,
+    val operator: String,
 )
 
 @HiltViewModel
@@ -291,7 +306,7 @@ class ExerciseViewModel @Inject constructor(
 }
 ```
 
-`AppModule` binds `InkStore` to `InMemoryInkStore` as a singleton and provides `MathExerciseGenerator`. The ViewModel generates a worksheet of 10 exercises, lays out the current exercise with `ColumnLayout.layout(exercise, LOGICAL_WIDTH, LOGICAL_HEIGHT)` (logical size 1080x1600, scaled by the UI). `onCellTapped` selects the cell; `onStrokeFinished` adds the stroke to the selected cell under the current `penAuthor`; `onFinished` clears the selection but keeps layers; `onNextExercise` advances the index and reloads cells, never exceeding the last exercise; `onClearLayer` clears the current author's layer on the selected cell.
+`AppModule` binds `InkStore` to `InMemoryInkStore` as a singleton and provides `MathExerciseGenerator`. The ViewModel generates a worksheet of 10 exercises, lays out the current exercise with `ColumnLayout.layout(exercise, LOGICAL_WIDTH, LOGICAL_HEIGHT)` (logical size 1080x1600, scaled by the UI), and prefixes every cell id with the exercise index (`ex<index>-...`) so cell ids stay unique across exercises and ink never bleeds from one exercise into the next. The state also carries the operator symbol (`+`, `-`, `×`) so the UI can render the task. `onCellTapped` selects the cell; `onStrokeFinished` adds the stroke to the selected cell under the current `penAuthor`; `onFinished` clears the selection but keeps layers; `onNextExercise` advances the index and reloads cells, never exceeding the last exercise; `onClearLayer` clears the current author's layer on the selected cell.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -339,7 +354,7 @@ fun InkCanvas(
 )
 ```
 
-`ExerciseScreen` renders the cells of the current exercise as a grid scaled from the logical size to the actual size, drawing each cell's ink layers (child blue, corrector red). Tapping a cell calls `onCellTapped`; while a cell is selected, a dialog shows that cell enlarged with an `InkCanvas` and a "Fertig" button that calls `onFinished`. `InkCanvas` captures pointer drags into a `Stroke` using `clipToBounds` for every point, draws the finished stroke, and calls `onStrokeFinished`. Strings: `done`, `next_exercise` in `values/strings.xml` (English) and `values-de/strings.xml` (German: "Fertig", "Nächste Aufgabe"). Cells get a `testTag` of their `CellId` value.
+`ExerciseScreen` renders the cells of the current exercise as a grid scaled from the logical size (1080x1600) to the actual size, drawing each cell's ink layers (child blue, corrector red). The cell Boxes are placed with dp offsets and a dp based scale, while the Canvas that draws strokes, operand labels' line and the result line works in pixels and computes its own pixel based scale from the canvas size; mixing the two scales shifts ink into the top left corner and moves the result line up into the operand rows. Tapping a cell calls `onCellTapped`; while a cell is selected, a dialog shows that cell enlarged with an `InkCanvas` and a "Fertig" button that calls `onFinished`. If the cell has a label (an operand digit), the dialog shows the digit as a light gray background behind the ink, so the child can write over or next to it. `InkCanvas` captures pointer drags into a `Stroke` using `clipToBounds` for every point, draws the finished stroke, and calls `onStrokeFinished`. Strings: `done`, `next_exercise` in `values/strings.xml` (English) and `values-de/strings.xml` (German: "Fertig", "Nächste Aufgabe"). Cells get a `testTag` of their `CellId` value.
 
 - [ ] **Step 1: Write the failing UI test**
 
@@ -400,4 +415,30 @@ Expected: all unit tests PASS.
 ```bash
 git add app
 git commit -m "feat: add pen color switch, layer clear, and next exercise controls"
+```
+
+### Task 9: Build and dev environment docs in README.md
+
+**Files:**
+- Modify: `README.md`
+
+**Interfaces:**
+- Produces: a "Build" section and a "Development setup" section in README.md.
+
+- [ ] **Step 1: Write the README sections**
+
+Add to README.md:
+
+- **Build:** prerequisites are JDK 17 and Android Studio (current stable, which bundles the Android SDK and Gradle wrapper). Build the debug APK with `./gradlew :app:assembleDebug`, run all unit tests with `./gradlew testDebugUnitTest`, run the UI tests on an emulator or device with `./gradlew :app:connectedDebugAndroidTest`.
+- **Development setup:** install Android Studio and let it install the SDK; open the project root; JDK 17 is configured via the IDE/Gradle toolchain. To run on a real tablet or phone, enable developer options and USB debugging (or Wi-Fi debugging) on the device, connect it to the dev machine, and pick it in the Run configuration. To use the emulator, create a device with API level >= 24 in the Device Manager and run. Pen input must be tested on a real device with a stylus; the emulator only covers the flow.
+
+- [ ] **Step 2: Verify**
+
+Read README.md top to bottom; the commands match the ones in this plan. No build run needed for a docs change.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add README.md
+git commit -m "doc: add build and development setup instructions to README"
 ```

@@ -9,7 +9,7 @@ absies is an Android app where small school children solve exercises by writing 
 - A child can open an exercise, write an answer digit by digit with a pen, and the answer stays visible in the exercise.
 - A second person can correct the answer in a different pen color without overwriting the child's strokes.
 - The exercise layout is generic: 2, 3, 4, or more digits per operand all render the same way.
-- The first step ships addition, subtraction, and multiplication as column exercises.
+- The first drop ships addition and subtraction as column exercises; multiplication follows in a later drop.
 
 ## Non-goals for the first step
 
@@ -76,7 +76,7 @@ The initial version generates worksheets in the app; loading worksheets and coll
 ## First feature set (minimal app)
 
 1. Gradle project scaffold: version catalog, `:app` with Compose and a theme.
-2. Exercise generator for addition, subtraction, and multiplication with configurable digit count and range, producing a worksheet of exercises.
+2. Exercise generator for addition and subtraction with configurable digit count and range, producing a worksheet of exercises.
 3. Grid rendering of one exercise: operands, helper row, line, result fields.
 4. Tap-to-enlarge cell overlay with pen input (`InkCanvas`: pointer events to strokes).
 5. Ink layers per cell with pen color switch and layer deletion.

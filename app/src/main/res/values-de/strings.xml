@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">absies</string>
+    <string name="done">Fertig</string>
+    <string name="next_exercise">Nächste Aufgabe</string>
+    <string name="pen_child">Kind</string>
+    <string name="pen_corrector">Korrektur</string>
+    <string name="clear_layer">Schicht löschen</string>
+</resources>
