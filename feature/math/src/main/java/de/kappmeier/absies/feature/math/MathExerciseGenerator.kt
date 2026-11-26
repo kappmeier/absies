@@ -7,11 +7,12 @@ import kotlin.random.Random
 class MathExerciseGenerator(
     private val digitRange: IntRange = 2..3,
     private val maxResult: Int = 9999,
+    private val operations: List<Operation> = listOf(Operation.ADDITION, Operation.SUBTRACTION),
     private val random: Random = Random.Default,
 ) {
 
     fun nextExercise(): MathExercise {
-        val operation = Operation.entries.random(random)
+        val operation = operations.random(random)
         val digits = random.nextInt(digitRange.first, digitRange.last + 1)
         val min = 10.0.pow(digits - 1).toInt()
         val max = 10.0.pow(digits).toInt() - 1

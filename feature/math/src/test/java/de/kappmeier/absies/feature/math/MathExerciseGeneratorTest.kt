@@ -14,16 +14,25 @@ class MathExerciseGeneratorTest {
     )
 
     @Test
-    fun `addition and subtraction operands have a digit count in range`() {
+    fun `only addition and subtraction are generated in the first drop`() {
         repeat(200) {
             val exercise = generator.nextExercise()
-            if (exercise.operation != Operation.MULTIPLICATION) {
-                exercise.operands.forEach { operand ->
-                    assertTrue(
-                        operand.toString().length in 2..3,
-                        "operand $operand of $exercise is outside the digit range",
-                    )
-                }
+            assertTrue(
+                exercise.operation == Operation.ADDITION || exercise.operation == Operation.SUBTRACTION,
+                "unexpected operation ${exercise.operation} in $exercise",
+            )
+        }
+    }
+
+    @Test
+    fun `operands have a digit count in range`() {
+        repeat(200) {
+            val exercise = generator.nextExercise()
+            exercise.operands.forEach { operand ->
+                assertTrue(
+                    operand.toString().length in 2..3,
+                    "operand $operand of $exercise is outside the digit range",
+                )
             }
         }
     }
@@ -52,9 +61,15 @@ class MathExerciseGeneratorTest {
     }
 
     @Test
-    fun `multiplication result stays within maxResult`() {
+    fun `multiplication stays within maxResult when enabled explicitly`() {
+        val withMultiplication = MathExerciseGenerator(
+            digitRange = 2..3,
+            maxResult = 9999,
+            operations = Operation.entries.toList(),
+            random = Random(42),
+        )
         repeat(200) {
-            val exercise = generator.nextExercise()
+            val exercise = withMultiplication.nextExercise()
             if (exercise.operation == Operation.MULTIPLICATION) {
                 assertTrue(exercise.result <= 9999, "result too large for $exercise")
             }

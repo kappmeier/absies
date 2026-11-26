@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a minimal absies app where a child solves generated column arithmetic exercises (addition, subtraction, multiplication, any digit count) by writing digits with a pen into cells that enlarge on tap, and a second person can correct in a different pen color on its own layer. No handwriting recognition yet.
+**Goal:** Ship a minimal absies app where a child solves generated column arithmetic exercises (addition and subtraction in the first drop, any digit count) by writing digits with a pen into cells that enlarge on tap, and a second person can correct in a different pen color on its own layer. No handwriting recognition yet.
 
 **Architecture:** Multi-module Gradle build per ADR 0004. `:app` holds Compose UI, Hilt, and the exercise ViewModel. `:core:exercise` holds the exercise/worksheet/collection and cell model. `:core:ink` holds the stroke model, the ink store, and the recognizer port. `:feature:math` holds the exercise generator and the column layout. Unidirectional flow: the ViewModel holds state, the UI renders it, pen events become strokes in the ink store.
 
@@ -195,6 +195,7 @@ data class MathExercise(val operation: Operation, val operands: List<Int>) : Exe
 class MathExerciseGenerator(
     private val digitRange: IntRange = 2..3,
     private val maxResult: Int = 9999,
+    private val operations: List<Operation> = listOf(Operation.ADDITION, Operation.SUBTRACTION),
     private val random: Random = Random.Default,
 ) {
     fun nextExercise(): MathExercise
@@ -202,7 +203,7 @@ class MathExerciseGenerator(
 }
 ```
 
-`MathExercise.result` computes sum for ADDITION, difference for SUBTRACTION, product for MULTIPLICATION. The generator picks a random operation and two operands with digit count in `digitRange`; for SUBTRACTION it ensures the first operand is >= the second; for MULTIPLICATION it ensures the product stays <= `maxResult`.
+`MathExercise.result` computes sum for ADDITION, difference for SUBTRACTION, product for MULTIPLICATION. The generator picks a random operation from its `operations` parameter, which defaults to ADDITION and SUBTRACTION only in the first drop (MULTIPLICATION stays supported for later), and two operands with digit count in `digitRange`; for SUBTRACTION it ensures the first operand is >= the second; for MULTIPLICATION it ensures the product stays <= `maxResult`.
 
 - [ ] **Step 1: Write the failing test**
 
